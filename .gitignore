@@ -54,3 +54,5 @@ _testmain.go
 /*.test
 .vscode/tasks.json
 zarf/compose/database-data/data
+
+zarf/keys
