@@ -10,19 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/emorydu/service/business/sdk/sqldb/dialect"
 	"github.com/emorydu/service/foundation/logger"
 	"github.com/emorydu/service/foundation/otel"
-	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel/attribute"
-)
-
-// lib/pq errorCodeNames
-// https://github.com/lib/pq/blob/master/error.go#L178
-const (
-	uniqueViolation = "23505"
-	undefinedTable  = "42P01"
 )
 
 // Set of error variables for CRUD operations.
@@ -32,7 +25,21 @@ var (
 	ErrUndefinedTable    = errors.New("undefined table")
 )
 
-// Config is the required properties to use the database.
+// dialectFor reports the dialect of the database a helper was handed. Every
+// valid sqlx.ExtContext is one of sqlx's own types (*DB, *Tx, *Conn), all of
+// which carry the driver name recorded at open time. A nil value yields the
+// generic dialect rather than a panic, because this is consulted on a path
+// where an error is already being returned.
+func dialectFor(db sqlx.ExtContext) dialect.Dialect {
+	if db == nil {
+		return dialect.Generic
+	}
+
+	return dialect.For(db.DriverName())
+}
+
+// Config is the required properties to open a Postgres database. Schema and
+// DisableTLS are Postgres-only concepts; MySQL has its own MySQLConfig.
 type Config struct {
 	User         string
 	Password     string
@@ -137,13 +144,12 @@ func NamedExecContext(ctx context.Context, log *logger.Logger, db sqlx.ExtContex
 	defer span.End()
 
 	if _, err := sqlx.NamedExecContext(ctx, db, query, data); err != nil {
-		if pqerr, ok := errors.AsType[*pgconn.PgError](err); ok {
-			switch pqerr.Code {
-			case undefinedTable:
-				return ErrUndefinedTable
-			case uniqueViolation:
-				return ErrDBDuplicatedEntry
-			}
+		dp := dialectFor(db)
+		switch {
+		case dp.IsUndefinedTable(err):
+			return ErrUndefinedTable
+		case dp.IsUniqueViolation(err):
+			return ErrDBDuplicatedEntry
 		}
 		return err
 	}
@@ -207,8 +213,7 @@ func namedQuerySlice[T any](ctx context.Context, log *logger.Logger, db sqlx.Ext
 	}
 
 	if err != nil {
-		var pqerr *pgconn.PgError
-		if errors.As(err, &pqerr) && pqerr.Code == undefinedTable {
+		if dialectFor(db).IsUndefinedTable(err) {
 			return ErrUndefinedTable
 		}
 		return err
@@ -283,8 +288,7 @@ func namedQueryStruct(ctx context.Context, log *logger.Logger, db sqlx.ExtContex
 	}
 
 	if err != nil {
-		var pqerr *pgconn.PgError
-		if errors.As(err, &pqerr) && pqerr.Code == undefinedTable {
+		if dialectFor(db).IsUndefinedTable(err) {
 			return ErrUndefinedTable
 		}
 		return err
