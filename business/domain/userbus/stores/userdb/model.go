@@ -29,7 +29,7 @@ func toDBUser(bus userbus.User) userDB {
 	return userDB{
 		ID:           bus.ID,
 		Name:         bus.Name.String(),
-		Email:        bus.Email.String(),
+		Email:        bus.Email.Address,
 		Roles:        role.ParseToString(bus.Roles),
 		PasswordHash: bus.PasswordHash,
 		Department:   name.ToSQLNullString(bus.Department),

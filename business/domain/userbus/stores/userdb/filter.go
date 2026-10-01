@@ -22,7 +22,7 @@ func applyFilter(filter userbus.QueryFilter, data map[string]any, buf *bytes.Buf
 	}
 
 	if filter.Email != nil {
-		data["email"] = filter.Email.String()
+		data["email"] = filter.Email.Address
 		wc = append(wc, "email = :email")
 	}
 
