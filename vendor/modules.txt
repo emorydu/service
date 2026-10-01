@@ -56,6 +56,7 @@ github.com/jackc/puddle/v2/internal/genstack
 ## explicit; go 1.10
 github.com/jmoiron/sqlx
 github.com/jmoiron/sqlx/reflectx
+github.com/jmoiron/sqlx/types
 # github.com/viccon/sturdyc v1.1.6
 ## explicit; go 1.22
 github.com/viccon/sturdyc
