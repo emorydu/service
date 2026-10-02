@@ -3,6 +3,7 @@ module github.com/emorydu/service
 go 1.27.1
 
 require (
+	github.com/ardanlabs/conf/v3 v3.13.0
 	github.com/ardanlabs/darwin/v3 v3.3.1
 	github.com/arl/statsviz v0.8.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
