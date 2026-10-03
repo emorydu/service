@@ -455,7 +455,7 @@ export-token:
 token-grpc:
 	grpcurl -plaintext -d '{"kid":"54bb2165-71e1-41a6-af3e-7da4a0e1e2c1"}' \
       -H "Authorization: Basic YWRtaW5AZXhhbXBsZS5jb206Z29waGVycw==" \
-      localhost:6001 auth.Auth/Token
+      localhost:6001 grpcauthapp.Auth/Token
 
 users:
 	curl -i \
