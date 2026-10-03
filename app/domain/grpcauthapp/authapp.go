@@ -53,12 +53,13 @@ func (a *App) Token(ctx context.Context, req *TokenRequest) (*TokenResponse, err
 		return nil, status.Error(codes.InvalidArgument, "kid is required")
 	}
 
-	// For simplicity, we're using a dummy claims structure here.
-	// In a real implementation, you would extract claims from the context or request.
-	claims := auth.Claims{
-		Roles: []string{"user"},
+	// The authInterceptor's Basic auth path already ran HandleAuthorization,
+	// which validated the credentials and placed the claims in the context.
+	claims := mid.GetClaims(ctx)
+	a.log.Info(ctx, "grpc token claims", "claims", claims)
+	if claims.Subject == "" {
+		return nil, status.Error(codes.Unauthenticated, "no claims in context")
 	}
-
 	token, err := a.auth.GenerateToken(kid, claims)
 	if err != nil {
 		a.log.Error(ctx, "token", "err", err)
@@ -144,10 +145,10 @@ func (a *App) Authorize(ctx context.Context, req *AuthorizeRequest) (*AuthorizeR
 
 func (a *App) authInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	switch info.FullMethod {
-	case "/auth.Auth/Token":
+	case "/grpcauthapp.Auth/Token":
 		return a.authorize(ctx, req, info, handler)
 
-	case "/auth.Auth/Authenticate":
+	case "/grpcauthapp.Auth/Authenticate":
 		return a.authenticate(ctx, req, info, handler)
 
 	default:
