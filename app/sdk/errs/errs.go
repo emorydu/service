@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+
+	"github.com/emorydu/service/foundation/web"
 )
 
 // ErrCode represents an error code in the system.
@@ -50,6 +52,9 @@ type Error struct {
 	FuncName string  `json:"-"`
 	FileName string  `json:"-"`
 }
+
+var _ web.Encoder = (*Error)(nil)
+var _ error = (*Error)(nil)
 
 // New constructs an error based on an app error.
 func New(code ErrCode, err error) *Error {
